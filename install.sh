@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 REPO="LisovskiyIvan/vtui"
 BIN_NAME="vui"
@@ -31,21 +30,13 @@ esac
 TMPDIR=$(mktemp -d)
 trap "rm -rf $TMPDIR" EXIT
 
-_wget() {
+download() {
     if command -v curl &>/dev/null; then
-        curl -fsSL -o "$1" "$2"
+        curl -L -o "$1" "$2" 2>/dev/null
     elif command -v wget &>/dev/null; then
-        wget --no-check-certificate -q -O "$1" "$2"
+        wget --no-check-certificate -q -O "$1" "$2" 2>/dev/null
     else
-        err "wget or curl required"
-    fi
-}
-
-_fetch() {
-    if command -v curl &>/dev/null; then
-        curl -fsSL "$1" 2>/dev/null
-    else
-        wget --no-check-certificate -qO- "$1" 2>/dev/null
+        return 1
     fi
 }
 
@@ -53,17 +44,31 @@ _fetch() {
 if [[ ! -x $CORE_BIN ]]; then
     info "Installing sing-box..."
 
-    _wget "${TMPDIR}/_api" "https://api.github.com/repos/${CORE_REPO}/releases/latest" 2>/dev/null || true
-    if [[ -f "${TMPDIR}/_api" ]]; then
-        CORE_VER=$(grep -oE '"tag_name":"v[0-9.]+"' "${TMPDIR}/_api" | head -1 | grep -oE 'v[0-9.]+' || true)
+    CORE_VER=""
+    API_URL="https://api.github.com/repos/${CORE_REPO}/releases/latest"
+
+    download "${TMPDIR}/_api" "$API_URL" || true
+    if [[ -s "${TMPDIR}/_api" ]]; then
+        CORE_VER=$(grep -oE '"tag_name":"v[0-9.]+"' "${TMPDIR}/_api" 2>/dev/null | head -1 | grep -oE 'v[0-9.]+' || true)
     fi
     rm -f "${TMPDIR}/_api"
-    [[ -z $CORE_VER ]] && err "Failed to get sing-box latest version"
+
+    if [[ -z "$CORE_VER" ]]; then
+        info "API rate limited, trying direct version fetch..."
+        if command -v curl &>/dev/null; then
+            CORE_VER=$(curl -fsSL "$API_URL" 2>/dev/null | grep -oE '"tag_name":"v[0-9.]+"' | head -1 | grep -oE 'v[0-9.]+' || true)
+        fi
+    fi
+
+    if [[ -z "$CORE_VER" ]]; then
+        CORE_VER="v1.13.11"
+        warn "Using fallback sing-box version: ${CORE_VER}"
+    fi
 
     info "sing-box version: ${CORE_VER}"
     CORE_URL="https://github.com/${CORE_REPO}/releases/download/${CORE_VER}/sing-box-${CORE_VER#v}-linux-${ARCH}.tar.gz"
 
-    _wget "${TMPDIR}/sing-box.tar.gz" "$CORE_URL"
+    download "${TMPDIR}/sing-box.tar.gz" "$CORE_URL" || err "Failed to download sing-box"
     mkdir -p "${CORE_DIR}/bin"
     tar xzf "${TMPDIR}/sing-box.tar.gz" --strip-components 1 -C "${CORE_DIR}/bin"
     chmod +x "$CORE_BIN"
@@ -131,7 +136,7 @@ fi
 # --- install vui ---
 info "Installing vui..."
 VUI_URL="https://github.com/${REPO}/releases/latest/download/vui-linux-${ARCH}"
-_wget "${TMPDIR}/${BIN_NAME}" "$VUI_URL"
+download "${TMPDIR}/${BIN_NAME}" "$VUI_URL" || err "Failed to download vui"
 chmod +x "${TMPDIR}/${BIN_NAME}"
 mv "${TMPDIR}/${BIN_NAME}" "${INSTALL_DIR}/${BIN_NAME}"
 ok "vui installed to ${INSTALL_DIR}/${BIN_NAME}"
