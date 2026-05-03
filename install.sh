@@ -47,6 +47,14 @@ if [[ ! -x $CORE_BIN ]]; then
 
     _wget "${TMPDIR}/_ver" "https://api.github.com/repos/${CORE_REPO}/releases/latest"
     CORE_VER=$(grep -oE '"tag_name":"v[0-9.]+"' "${TMPDIR}/_ver" | grep -oE 'v[0-9.]+' || true)
+
+    if [[ -z $CORE_VER ]]; then
+        CORE_VER=$(curl -fsSL -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${CORE_REPO}/releases/latest" 2>/dev/null | grep -oE '"tag_name":"v[0-9.]+"' | grep -oE 'v[0-9.]+' || true)
+    fi
+
+    if [[ -z $CORE_VER ]]; then
+        CORE_VER=$(wget --no-check-certificate -qO- -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${CORE_REPO}/releases/latest" 2>/dev/null | grep -oE '"tag_name":"v[0-9.]+"' | grep -oE 'v[0-9.]+' || true)
+    fi
     [[ -z $CORE_VER ]] && err "Failed to get sing-box latest version"
 
     info "sing-box version: ${CORE_VER}"
