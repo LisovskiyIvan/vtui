@@ -45,14 +45,8 @@ _wget() {
 if [[ ! -x $CORE_BIN ]]; then
     info "Installing sing-box..."
 
-    CORE_VER=$(_wget - "/dev/null" "https://api.github.com/repos/${CORE_REPO}/releases/latest" 2>/dev/null && \
-        grep tag_name "$TMPDIR/_ver" 2>/dev/null | grep -oE 'v[0-9.]+' || true)
-    rm -f "$TMPDIR/_ver"
-
-    if [[ -z $CORE_VER ]]; then
-        CORE_VER=$(_wget - "$TMPDIR/latest" "https://api.github.com/repos/${CORE_REPO}/releases/latest" 2>/dev/null && \
-            grep -oE '"tag_name":"v[0-9.]+"' "$TMPDIR/latest" | grep -oE 'v[0-9.]+' || true)
-    fi
+    _wget "${TMPDIR}/_ver" "https://api.github.com/repos/${CORE_REPO}/releases/latest"
+    CORE_VER=$(grep -oE '"tag_name":"v[0-9.]+"' "${TMPDIR}/_ver" | grep -oE 'v[0-9.]+' || true)
     [[ -z $CORE_VER ]] && err "Failed to get sing-box latest version"
 
     info "sing-box version: ${CORE_VER}"
