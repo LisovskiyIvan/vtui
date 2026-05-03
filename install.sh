@@ -32,12 +32,20 @@ TMPDIR=$(mktemp -d)
 trap "rm -rf $TMPDIR" EXIT
 
 _wget() {
-    if command -v wget &>/dev/null; then
-        wget --no-check-certificate -q -O "$1" "$2"
-    elif command -v curl &>/dev/null; then
+    if command -v curl &>/dev/null; then
         curl -fsSL -o "$1" "$2"
+    elif command -v wget &>/dev/null; then
+        wget --no-check-certificate -q -O "$1" "$2"
     else
         err "wget or curl required"
+    fi
+}
+
+_fetch() {
+    if command -v curl &>/dev/null; then
+        curl -fsSL "$1" 2>/dev/null
+    else
+        wget --no-check-certificate -qO- "$1" 2>/dev/null
     fi
 }
 
@@ -45,16 +53,7 @@ _wget() {
 if [[ ! -x $CORE_BIN ]]; then
     info "Installing sing-box..."
 
-    _wget "${TMPDIR}/_ver" "https://api.github.com/repos/${CORE_REPO}/releases/latest"
-    CORE_VER=$(grep -oE '"tag_name":"v[0-9.]+"' "${TMPDIR}/_ver" | grep -oE 'v[0-9.]+' || true)
-
-    if [[ -z $CORE_VER ]]; then
-        CORE_VER=$(curl -fsSL -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${CORE_REPO}/releases/latest" 2>/dev/null | grep -oE '"tag_name":"v[0-9.]+"' | grep -oE 'v[0-9.]+' || true)
-    fi
-
-    if [[ -z $CORE_VER ]]; then
-        CORE_VER=$(wget --no-check-certificate -qO- -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${CORE_REPO}/releases/latest" 2>/dev/null | grep -oE '"tag_name":"v[0-9.]+"' | grep -oE 'v[0-9.]+' || true)
-    fi
+    CORE_VER=$(_fetch "https://api.github.com/repos/${CORE_REPO}/releases/latest" | grep -oE '"tag_name":"v[0-9.]+"' | head -1 | grep -oE 'v[0-9.]+' || true)
     [[ -z $CORE_VER ]] && err "Failed to get sing-box latest version"
 
     info "sing-box version: ${CORE_VER}"
