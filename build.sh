@@ -9,10 +9,10 @@ mkdir -p "$OUTPUT_DIR"
 
 echo "Building vui v${VERSION}..."
 
-bun build --compile --minify --target=bun-linux-x64 ./src/index.tsx -o "${OUTPUT_DIR}/vui-linux-amd64"
+bun build --compile --minify --target=bun-linux-x64 --outfile="${OUTPUT_DIR}/vui-linux-amd64" ./src/index.tsx
 echo "Built: vui-linux-amd64"
 
-bun build --compile --minify --target=bun-linux-arm64 ./src/index.tsx -o "${OUTPUT_DIR}/vui-linux-arm64"
+bun build --compile --minify --target=bun-linux-arm64 --outfile="${OUTPUT_DIR}/vui-linux-arm64" ./src/index.tsx
 echo "Built: vui-linux-arm64"
 
 ls -lh "${OUTPUT_DIR}/"

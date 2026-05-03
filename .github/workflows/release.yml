@@ -34,7 +34,7 @@ jobs:
 
       - name: Build
         run: |
-          bun build --compile --minify --target=${{ matrix.target }} ./src/index.tsx -o ./dist/vui-linux-${{ matrix.arch }}
+          bun build --compile --minify --target=${{ matrix.target }} --outfile=./dist/vui-linux-${{ matrix.arch }} ./src/index.tsx
           chmod +x ./dist/vui-linux-${{ matrix.arch }}
 
       - name: Upload artifact

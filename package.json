@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "bun run --watch src/index.tsx",
     "build": "bash build.sh",
-    "build:amd64": "bun build --compile --minify --target=bun-linux-x64 ./src/index.tsx -o ./dist/vui-linux-amd64",
-    "build:arm64": "bun build --compile --minify --target=bun-linux-arm64 ./src/index.tsx -o ./dist/vui-linux-arm64",
+    "build:amd64": "bun build --compile --minify --target=bun-linux-x64 --outfile=./dist/vui-linux-amd64 ./src/index.tsx",
+    "build:arm64": "bun build --compile --minify --target=bun-linux-arm64 --outfile=./dist/vui-linux-arm64 ./src/index.tsx",
     "lint": "oxlint src/*",
     "fmt": "oxfmt src/*",
     "typecheck": "tsc --noEmit"
