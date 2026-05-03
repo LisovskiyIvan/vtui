@@ -53,7 +53,11 @@ _fetch() {
 if [[ ! -x $CORE_BIN ]]; then
     info "Installing sing-box..."
 
-    CORE_VER=$(_fetch "https://api.github.com/repos/${CORE_REPO}/releases/latest" | grep -oE '"tag_name":"v[0-9.]+"' | head -1 | grep -oE 'v[0-9.]+' || true)
+    _wget "${TMPDIR}/_api" "https://api.github.com/repos/${CORE_REPO}/releases/latest" 2>/dev/null || true
+    if [[ -f "${TMPDIR}/_api" ]]; then
+        CORE_VER=$(grep -oE '"tag_name":"v[0-9.]+"' "${TMPDIR}/_api" | head -1 | grep -oE 'v[0-9.]+' || true)
+    fi
+    rm -f "${TMPDIR}/_api"
     [[ -z $CORE_VER ]] && err "Failed to get sing-box latest version"
 
     info "sing-box version: ${CORE_VER}"
